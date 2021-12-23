@@ -1,0 +1,90 @@
+clientID = 75689
+
+clientSecret = "91d3f240a8cf27d5a08f59fa58b996102eed19c1"
+
+https://www.strava.com/oauth/authorize?client_id=75689&redirect_uri=http://localhost&response_type=code&scope=activity:read_all
+
+http://localhost/?state=&code=f5ab3950dc423664cbc2136bc975a83fd6d4708e&scope=read,activity:read_all
+
+code = "b4d70276f11ece378002fd7f62961f6da481499c"
+
+url = "https://www.strava.com/oauth/token?client_id=75689&client_secret=91d3f240a8cf27d5a08f59fa58b996102eed19c1&code=b4d70276f11ece378002fd7f62961f6da481499c&grant_type=authorization_code"
+
+import requests
+
+myobj = {'somekey': 'somevalue'}
+
+x = requests.post(url, data = myobj)
+
+print(x.text)
+
+import requests
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+auth_url = "https://www.strava.com/oauth/token"
+activites_url = "https://www.strava.com/api/v3/athlete/activities"
+
+payload = {
+    'client_id': "75689",
+    'client_secret': '91d3f240a8cf27d5a08f59fa58b996102eed19c1',
+    'refresh_token': 'c3385b4675d00d3525b7c89dd973ea993d4d5e4c',
+    'grant_type': "refresh_token",
+    'f': 'json'
+}
+
+print("Requesting Token...\n")
+res = requests.post(auth_url, data=payload, verify=False)
+access_token = res.json()['access_token']
+print("Access Token = {}\n".format(access_token))
+
+header = {'Authorization': 'Bearer ' + access_token}
+param = {'per_page': 200, 'page': 2}
+my_dataset = requests.get(activites_url, headers=header, params=param).json()
+
+print(my_dataset[0]["name"])
+print(my_dataset[0]["map"]["summary_polyline"])
+
+import pandas as pd
+from pandas.io.json import json_normalize
+
+
+#Seaborn is a data visualization library.
+import seaborn as sns
+#Matplotlib is a data visualization library. 
+#Seaborn is actually built on top of Matplotlib. 
+import matplotlib.pyplot as plt
+#Numpy will help us handle some work with arrays.
+import numpy as np
+#Datetime will allow Python to recognize dates as dates, not strings.
+from datetime import datetime
+
+activities = json_normalize(my_dataset)
+print(activities)
+
+activities.columns
+
+cols = ['type','distance', 'average_speed','moving_time','achievement_count', 'kudos_count','total_photo_count','pr_count','suffer_score', 'private'
+       ]
+
+suffer_relation = activities[cols]
+runs = activities.loc[activities['type'] == 'Run']
+
+suffer_relation.head()
+
+sns.set(style="ticks", context="talk")
+sns.regplot(x='distance', y = 'kudos_count', data = runs).set_title("Runs: Kudos vs Distance")
+
+sns.set(style="ticks", context="talk")
+sns.regplot(x='suffer_score', y = 'kudos_count', data = runs).set_title("Runs: Kudos vs Suffer Score")
+
+rides = activities.loc[activities['type'] == 'Ride']
+
+sns.set(style="ticks", context="talk")
+sns.regplot(x='distance', y = 'kudos_count', data = rides).set_title("Rides: Kudos vs Distance")
+
+sns.set(style="ticks", context="talk")
+sns.regplot(x='distance', y = 'average_speed', data = runs).set_title("Runs: Average Speed vs Distance")
+
+sns.set(style="ticks", context="talk")
+sns.regplot(x='pr_count', y = 'kudos_count', data = runs).set_title("Runs: PRs vs Kudos")
